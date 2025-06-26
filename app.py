@@ -1,24 +1,28 @@
-import torch
-from transformers import ViTForImageClassification, ViTImageProcessor
-from PIL import Image
 import streamlit as st
+from transformers import ViTFeatureExtractor, ViTForImageClassification
+from PIL import Image
+import torch
 
-# Load model and processor
-model = ViTForImageClassification.from_pretrained("vit-cropdisease")
-processor = ViTImageProcessor.from_pretrained("vit-cropdisease")
+# Load model and feature extractor
+model_path = "vit-cropdisease"
+feature_extractor = ViTFeatureExtractor.from_pretrained(model_path)
+model = ViTForImageClassification.from_pretrained(model_path)
+model.eval()
 
-# Streamlit UI
-st.title("Crop Disease Detection")
-uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
+st.title("Crop Disease Prediction")
+
+uploaded_file = st.file_uploader("Upload a leaf image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image")
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    inputs = processor(images=image, return_tensors="pt")
+    inputs = feature_extractor(images=image, return_tensors="pt")
+
     with torch.no_grad():
         outputs = model(**inputs)
-        probs = torch.nn.functional.softmax(outputs.logits, dim=1)
-        predicted_class = model.config.id2label[probs.argmax().item()]
+        logits = outputs.logits
+        predicted_class_idx = logits.argmax(-1).item()
+        predicted_label = model.config.id2label[predicted_class_idx]
 
-    st.markdown(f"### 🌾 Predicted Class: **{predicted_class}**")
+    st.success(f"🌿 Predicted Disease: **{predicted_label}**")
