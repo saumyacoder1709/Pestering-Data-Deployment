@@ -48,6 +48,7 @@ if uploaded_file is not None:
         outputs = model(**inputs)
         logits = outputs.logits
         predicted_class_idx = logits.argmax(-1).item()
-        predicted_label = model.config.id2label[predicted_class_idx]
+        predicted_label = id2label[predicted_class_idx]
 
     st.success(f"🌿 Predicted Disease: **{predicted_label}**")
+
